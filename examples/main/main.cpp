@@ -880,6 +880,15 @@ int main(int argc, char ** argv) {
                     const auto line_inp = ::llama_tokenize(ctx, user_inp,            false, params.conversation);
                     const auto line_sfx = ::llama_tokenize(ctx, params.input_suffix, false, true);
 
+                    // Check if the buffer contains the cache reset command
+                    if (buffer.find("<|ai_cache_reset|>") != std::string::npos) {
+                        // remove all tokens from the cache except the prompt
+                        std::vector<llama_token> original_inp = ::llama_tokenize(ctx, params.prompt, true, true);
+                        original_prompt_len = original_inp.size();
+                        llama_kv_cache_seq_rm(ctx, -1, original_prompt_len, -1);
+                        LOG_TEE("Resetting cache due to command found: <|ai_cache_reset|>.");
+                    }
+
                     LOG("input tokens: %s\n", LOG_TOKENS_TOSTR_PRETTY(ctx, line_inp).c_str());
 
                     embd_inp.insert(embd_inp.end(), line_pfx.begin(), line_pfx.end());
